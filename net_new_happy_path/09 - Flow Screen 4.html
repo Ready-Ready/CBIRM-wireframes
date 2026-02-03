@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Salesforce Console - Flow Screen 4 New Child</title>
+    <style>
+        /* --- SLDS Base & Reset --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F3F3F3;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        * { box-sizing: border-box; }
+        ul { list-style: none; padding: 0; margin: 0; }
+
+        /* --- 1. Global Header --- */
+        .global-header {
+            height: 50px;
+            background-color: #FFFFFF;
+            border-bottom: 1px solid #DDDBDA;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            justify-content: space-between;
+            flex-shrink: 0;
+            z-index: 200;
+            position: relative;
+        }
+
+        .header-brand { display: flex; align-items: center; width: 200px; }
+        .slds-icon-cloud { width: 38px; height: auto; fill: #0070D2; }
+
+        .header-search { flex-grow: 1; display: flex; justify-content: center; }
+        .search-box { position: relative; width: 400px; }
+        .search-box input {
+            width: 100%; padding: 6px 12px 6px 36px;
+            border: 1px solid #DDDBDA; border-radius: 4px;
+            font-size: 13px; outline: none; background-color: #FFFFFF;
+            transition: all 0.2s;
+        }
+        .search-box input:focus { border-color: #1589EE; box-shadow: 0 0 3px #0070D2; }
+        .search-icon { position: absolute; left: 10px; top: 7px; font-size: 14px; color: #706E6B; }
+
+        .header-tools { display: flex; align-items: center; gap: 16px; }
+        .tool-icon { cursor: pointer; color: #706E6B; font-size: 16px; }
+        .tool-icon:hover { color: #0070D2; }
+        .avatar {
+            width: 24px; height: 24px; background-color: #498ba8;
+            border-radius: 50%; position: relative;
+        }
+
+        /* --- 2. Console Navigation Bar --- */
+        .console-nav-bar {
+            height: 40px;
+            background-color: #F3F3F3;
+            border-bottom: 1px solid #DDDBDA;
+            display: flex;
+            align-items: flex-end;
+            padding-left: 12px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 2px 0 rgba(0,0,0,0.05);
+            z-index: 150;
+        }
+
+        .waffle-container { margin-right: 16px; cursor: pointer; margin-bottom: 10px; }
+        .waffle-grid { display: grid; grid-template-columns: repeat(3, 4px); gap: 4px; }
+        .w-dot { width: 4px; height: 4px; background-color: #706E6B; border-radius: 50%; }
+
+        .app-title {
+            font-size: 14px; font-weight: 700; color: #080707;
+            margin-right: 20px; white-space: nowrap; margin-bottom: 10px;
+        }
+
+        .nav-split-button-container { position: relative; margin-bottom: 4px; margin-right: 8px; }
+        .nav-split-button {
+            display: flex; align-items: center;
+            border: 1px solid #DDDBDA; border-radius: 4px;
+            height: 32px; background-color: white;
+        }
+        .nav-label {
+            padding: 0 12px; font-size: 13px; font-weight: 700;
+            color: #080707; cursor: pointer; height: 100%;
+            display: flex; align-items: center;
+            border-right: 1px solid #DDDBDA;
+        }
+        .nav-label:hover { background-color: #F3F3F3; }
+        .nav-arrow-box {
+            padding: 0 8px; height: 100%; display: flex;
+            align-items: center; justify-content: center; cursor: pointer;
+        }
+        .nav-arrow-box:hover { background-color: #F3F3F3; }
+        .nav-arrow { font-size: 8px; color: #080707; }
+
+        /* Workspace Tab */
+        .workspace-tab {
+            height: 32px;
+            background-color: #FFFFFF;
+            border: 1px solid #DDDBDA;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            padding: 0 12px 0 16px;
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #080707;
+            cursor: pointer;
+            margin-bottom: -1px;
+            position: relative;
+            z-index: 160;
+            border-top: 2px solid #0070D2;
+        }
+        .tab-icon { margin-right: 8px; font-size: 14px; }
+        .tab-close { margin-left: 12px; font-size: 11px; color: #706E6B; padding: 2px; border-radius: 2px; }
+
+
+        /* --- 3. Split View Container --- */
+        .split-view-container {
+            display: flex; flex-grow: 1; height: calc(100vh - 90px);
+            overflow: hidden; position: relative;
+        }
+
+        /* LEFT: Sidebar (COLLAPSED) */
+        .split-view-drawer {
+            width: 320px; background-color: #FFFFFF; border-right: 1px solid #DDDBDA;
+            display: flex; flex-direction: column; flex-shrink: 0;
+            transition: width 0.3s ease; overflow: hidden; white-space: nowrap;
+        }
+        .split-view-drawer.collapsed { width: 0; border-right: none; }
+
+        .split-header {
+            padding: 12px 12px 8px 12px; border-bottom: 1px solid #DDDBDA;
+            background-color: #F3F3F3; display: flex; justify-content: space-between;
+            align-items: flex-start;
+        }
+        .split-header-title { font-size: 14px; font-weight: 900; color: #080707; display: flex; align-items: center; cursor: pointer; }
+        .split-header-title span { margin-right: 4px; }
+        .split-meta { font-size: 12px; color: #3E3E3C; margin-top: 4px; }
+        
+        .collapse-btn { cursor: pointer; color: #706E6B; font-size: 16px; padding: 4px; border-radius: 4px; }
+        
+        .split-list { overflow-y: auto; background-color: #FFFFFF; flex-grow: 1; }
+        .split-item { padding: 12px; border-bottom: 1px solid #DDDBDA; cursor: pointer; border-left: 3px solid transparent; }
+        .item-link { font-size: 13px; color: #080707; font-weight: 600; display: block; margin-bottom: 4px; }
+        .item-detail { font-size: 11px; color: #3E3E3C; display: flex; justify-content: space-between; }
+
+        /* RIGHT: Workspace Canvas */
+        .workspace-canvas {
+            flex-grow: 1; background-color: #FFFFFF;
+            overflow: hidden; 
+            position: relative; display: flex; flex-direction: column;
+        }
+
+        /* Record Content Scroll Area */
+        .record-scroll-container {
+            flex-grow: 1; overflow-y: hidden; /* No scroll while modal open */
+            padding: 12px; background-color: #F3F3F3;
+        }
+
+        /* --- RECORD PAGE ELEMENTS (FULL BACKGROUND) --- */
+        .highlights-panel {
+            background-color: #FFFFFF; padding: 16px 24px;
+            border: 1px solid #DDDBDA; border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .hp-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .record-info { display: flex; align-items: center; }
+        .icon {
+            width: 32px; height: 32px; background-color: #3BA755; 
+            border-radius: 4px; margin-right: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 18px;
+        }
+        .record-title h1 { font-size: 18px; font-weight: 700; margin: 0; color: #080707; }
+        .record-title span { font-size: 12px; color: #3E3E3C; text-transform: uppercase; }
+        
+        .hp-actions { display: flex; gap: 8px; }
+        .btn-neutral {
+            background-color: #FFFFFF; color: #0070D2;
+            border: 1px solid #DDDBDA; padding: 8px 16px;
+            font-size: 13px; border-radius: 4px; cursor: pointer;
+        }
+        .btn-brand {
+            background-color: #0070D2; color: white;
+            border: 1px solid #0070D2; padding: 8px 16px;
+            font-size: 13px; border-radius: 4px; cursor: pointer;
+        }
+
+        .compact-layout { display: flex; gap: 48px; margin-left: 44px; }
+        .compact-field .c-label { font-size: 12px; color: #5d5d5d; display: block; margin-bottom: 2px; }
+        .compact-field .c-value { font-size: 14px; color: #080707; font-weight: 400; border-bottom: 1px dotted #ccc; }
+
+        .record-tabs {
+            background-color: #FFFFFF; border: 1px solid #DDDBDA;
+            border-bottom: none; border-radius: 4px 4px 0 0;
+            padding: 0 24px; display: flex; margin-bottom: 0;
+        }
+        .r-tab {
+            padding: 12px 0; margin-right: 24px;
+            font-size: 13px; font-weight: 700; color: #0070D2;
+            border-bottom: 2px solid #0070D2; cursor: pointer;
+        }
+        .r-tab-inactive { color: #444; border-bottom: none; font-weight: 400; }
+
+        .record-body {
+            background-color: #FFFFFF; border: 1px solid #DDDBDA;
+            border-radius: 0 0 4px 4px; border-top: 1px solid #DDDBDA;
+            padding: 24px; margin-top: -1px; 
+        }
+        .section { margin-bottom: 24px; }
+        .section-header {
+            background-color: #F3F3F3; padding: 8px 12px;
+            font-size: 13px; font-weight: 700; border-radius: 4px;
+            margin-bottom: 12px; display: flex; align-items: center;
+        }
+        .section-header::before { content: "▼"; font-size: 9px; margin-right: 8px; color: #706E6B; }
+
+        .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 32px; }
+        .field { border-bottom: 1px solid #ecebea; padding-bottom: 4px; }
+        .label { font-size: 12px; color: #3E3E3C; margin-bottom: 4px; display: block; }
+        .value { font-size: 13px; color: #080707; min-height: 18px; }
+        .full-width { grid-column: span 2; }
+        .long-text { white-space: pre-wrap; }
+
+        /* Sidebar Handle (Collapsed) */
+        .sidebar-expand-handle {
+            position: absolute; left: 0; top: 12px; bottom: 0; width: 12px;
+            background-color: #FFFFFF; border: 1px solid #DDDBDA; border-left: none;
+            border-radius: 0 4px 4px 0; display: flex;
+            align-items: center; justify-content: center; cursor: pointer; z-index: 50;
+            box-shadow: 2px 0 2px rgba(0,0,0,0.05); height: 32px;
+        }
+
+        /* --- MODAL STYLES --- */
+        .backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(8, 7, 7, 0.6); z-index: 900;
+        }
+        
+        .modal-container {
+            position: fixed; top: 10%; left: 50%; transform: translateX(-50%);
+            width: 50%; max-width: 640px; background-color: #FFFFFF;
+            border-radius: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 1000;
+            display: flex; flex-direction: column; max-height: 80vh;
+        }
+
+        .modal-header {
+            padding: 16px 24px; border-bottom: 2px solid #DDDBDA; background-color: #FFFFFF;
+            border-radius: 4px 4px 0 0; display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-header h2 { font-size: 20px; font-weight: 300; margin: 0; color: #080707; }
+        .close-btn { font-size: 24px; color: #706E6B; cursor: pointer; line-height: 1; }
+
+        .modal-body {
+            padding: 24px 32px; overflow-y: auto; flex-grow: 1; min-height: 250px;
+        }
+
+        .modal-footer {
+            padding: 12px 16px; background-color: #F3F3F3; border-top: 1px solid #DDDBDA;
+            border-radius: 0 0 4px 4px; display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        .flow-btn-group { display: flex; gap: 12px; }
+        .btn-flow-nav { padding: 0 16px; height: 32px; font-size: 13px; border-radius: 4px; cursor: pointer; }
+        .btn-secondary { background-color: white; border: 1px solid #DDDBDA; color: #0070D2; }
+        .btn-primary { background-color: #0070D2; border: 1px solid #0070D2; color: white; }
+        .btn-disabled { background-color: white; border: 1px solid #DDDBDA; color: #DDDBDA; cursor: not-allowed; }
+
+        /* --- FLOW COMPONENT STYLES --- */
+        .flow-subtitle {
+            font-size: 16px; font-weight: 700; color: #080707; margin-bottom: 16px; border-bottom: 1px solid #DDDBDA; padding-bottom: 8px;
+        }
+
+        /* REPEATER STYLES */
+        .repeater-container {
+            border: 1px solid #DDDBDA;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            background-color: #F3F3F3;
+            padding: 12px;
+        }
+        
+        .repeater-item {
+            background-color: #FFFFFF;
+            border: 1px solid #DDDBDA;
+            border-radius: 4px;
+            padding: 16px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        
+        .repeater-item-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px;
+        }
+        .repeater-title { font-size: 12px; font-weight: 700; color: #0070D2; text-transform: uppercase; }
+        
+        .btn-remove-item {
+            background: none; border: none; cursor: pointer; color: #706E6B;
+        }
+        .btn-remove-item:hover { color: #ea001e; }
+
+        .btn-add-repeater {
+            width: 100%;
+            background-color: #FFFFFF;
+            border: 1px dashed #DDDBDA;
+            color: #0070D2;
+            padding: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn-add-repeater:hover {
+            background-color: #F3F3F3;
+            border-color: #0070D2;
+        }
+
+        /* 2x2 Grid for Repeater Fields */
+        .item-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .slds-form-element { margin-bottom: 0; }
+        .slds-form-element__label { font-size: 11px; color: #3E3E3C; margin-bottom: 2px; display: block; }
+        .required-marker { color: #ea001e; margin-left: 2px; }
+
+        .slds-input, .slds-select {
+            width: 100%; padding: 0 12px; height: 32px; border: 1px solid #DDDBDA;
+            border-radius: 4px; font-size: 13px; background-color: white;
+        }
+        
+        /* Picklist Arrow Shim */
+        .slds-select {
+            padding-right: 24px;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3cpath fill='%23706E6B' d='M12.2 16.2c-.3.3-.7.3-1 0L5.6 10.6c-.3-.3-.3-.7 0-1 .3-.3.7-.3 1 0l4.8 4.8 4.8-4.8c.3-.3.7-.3 1 0 .3.3.3.7 0 1l-5 5.6z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 12px;
+        }
+
+        /* Lookup Icon Shim */
+        .input-icon-group { position: relative; }
+        .input-icon-group input { padding-left: 30px; }
+        .input-icon { position: absolute; left: 8px; top: 8px; font-size: 14px; color: #706E6B; }
+
+        .hidden { display: none; }
+        .fade-in { animation: fadeIn 0.3s; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="global-header">
+        <div class="header-brand"><svg class="slds-icon-cloud" viewBox="0 0 24 24"><path d="M18.6 7.6C18.1 3.3 14.5 0 10.1 0 6.6 0 3.4 2 1.8 5.1 0.7 5.7 0 6.8 0 8c0 1.7 1.3 3 3 3h16c1.7 0 3-1.3 3-3 0-1.4-.9-2.6-2.2-3z" /></svg></div>
+        <div class="header-search"><input class="search-box" type="text" placeholder="Search..."></div>
+        <div class="header-tools"><span>★</span><span>＋</span><span>?</span><span>⚙</span><span>🔔</span></div>
+    </header>
+
+    <div class="console-nav-bar">
+        <div class="nav-split-button-container">
+            <div class="nav-split-button"><div class="nav-label">Form Response Logs</div><div class="nav-arrow-box">▼</div></div>
+        </div>
+        <div class="workspace-tab">📋 LOG-0001 <span style="margin-left:8px; font-size:10px;">✕</span></div>
+    </div>
+
+    <div class="split-view-container">
+        
+        <div id="sidebar" class="split-view-drawer collapsed">
+            <div class="split-header"><div><span style="font-weight:700;">Recently Viewed</span> ▼</div><div>◀</div></div>
+            <div class="split-list">
+                <div class="split-item active"><span class="item-link">LOG-0001</span><div class="item-detail"><span>Ready for Review</span><span>10/24</span></div></div>
+            </div>
+        </div>
+
+        <div class="workspace-canvas">
+            <div class="sidebar-expand-handle">▶</div>
+            <div class="record-scroll-container">
+                
+                <div class="highlights-panel">
+                    <div class="hp-top">
+                        <div class="record-info"><div class="icon">📋</div><div class="record-title"><span>Form Response Log</span><h1>LOG-0001</h1></div></div>
+                        <div class="hp-actions"><button class="btn-neutral">Edit</button><button class="btn-neutral">Delete</button><button class="btn-brand">Process Response</button></div>
+                    </div>
+                    <div class="compact-layout">
+                        <div class="compact-field"><span class="c-label">Client Name</span><span class="c-value">Jane Doe</span></div>
+                        <div class="compact-field"><span class="c-label">In Guilford County?</span><span class="c-value">Yes</span></div>
+                        <div class="compact-field"><span class="c-label">Is Pregnant?</span><span class="c-value">Yes</span></div>
+                        <div class="compact-field"><span class="c-label">Children &le; 3?</span><span class="c-value">Yes</span></div>
+                    </div>
+                </div>
+
+                <div class="record-tabs"><div class="r-tab">Details</div><div class="r-tab r-tab-inactive">Related</div></div>
+
+                <div class="record-body">
+                    <div class="section"><div class="section-header">Client Information</div>
+                        <div class="field-grid">
+                            <div class="field"><span class="label">Client Full Name</span><div class="value">Jane Doe</div></div>
+                            <div class="field"><span class="label">Date of Birth</span><div class="value">01/15/1990</div></div>
+                            <div class="field"><span class="label">Email Address</span><div class="value">jane.doe@example.com</div></div>
+                            <div class="field"><span class="label">Phone Number</span><div class="value">(555) 123-4567</div></div>
+                            <div class="field"><span class="label">Primary Language</span><div class="value">English</div></div>
+                            <div class="field"><span class="label">Interpreter Required?</span><div class="value"><input type="checkbox" disabled></div></div>
+                            <div class="field full-width"><span class="label">Street Address</span><div class="value">123 Maple Street, Greensboro, NC</div></div>
+                            <div class="field"><span class="label">Zip Code</span><div class="value">27401</div></div>
+                            <div class="field"><span class="label">In Guilford County?</span><div class="value"><input type="checkbox" checked disabled></div></div>
+                        </div>
+                    </div>
+                    <div class="section"><div class="section-header">Family Information</div>
+                        <div class="field-grid">
+                            <div class="field"><span class="label">Is Pregnant?</span><div class="value"><input type="checkbox" checked disabled></div></div>
+                            <div class="field"><span class="label">Estimated Due Date</span><div class="value">12/01/2023</div></div>
+                            <div class="field"><span class="label">Total Children</span><div class="value">2</div></div>
+                            <div class="field"><span class="label">Children Aged 3 or Under?</span><div class="value">Yes</div></div>
+                        </div>
+                    </div>
+                    <div class="section"><div class="section-header">Referral Information</div>
+                        <div class="field-grid">
+                            <div class="field"><span class="label">Referral Person Name</span><div class="value">Dr. Smith</div></div>
+                            <div class="field"><span class="label">Referral Source</span><div class="value">Partner Agency</div></div>
+                            <div class="field full-width"><span class="label">Medical Site & Agency Info</span><div class="value long-text">Dr. Smith with Community Health Clinic.</div></div>
+                            <div class="field full-width"><span class="label">Referral Contact Info</span><div class="value long-text">Clinic Main Line: 555-0000, ask for front desk.</div></div>
+                            <div class="field full-width"><span class="label">Reason for Referral</span><div class="value long-text">Patient requests assistance with housing and prenatal care coordination.</div></div>
+                            <div class="field full-width"><span class="label">Additional Services Requested</span><div class="value">N/A</div></div>
+                            <div class="field full-width"><span class="label">Additional Information</span><div class="value long-text">Patient is best reachable in the mornings.</div></div>
+                        </div>
+                    </div>
+                    <div class="section"><div class="section-header">System Information</div>
+                        <div class="field-grid">
+                            <div class="field"><span class="label">Office Form ID</span><div class="value">A92-9382-9982</div></div>
+                            <div class="field"><span class="label">Submission Date</span><div class="value">10/24/2023</div></div>
+                            <div class="field"><span class="label">Form Start Time</span><div class="value">10/24/2023 2:00 PM</div></div>
+                            <div class="field"><span class="label">Form Completion Time</span><div class="value">10/24/2023 2:15 PM</div></div>
+                            <div class="field"><span class="label">Created By</span><div class="value">PowerAutomate Integration User</div></div>
+                            <div class="field"><span class="label">Last Modified By</span><div class="value">PowerAutomate Integration User</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="backdrop"></div>
+
+    <div class="modal-container">
+        <div class="modal-header">
+            <h2>Process Response</h2>
+            <span class="close-btn">×</span>
+        </div>
+
+        <div class="modal-body">
+            
+            <div class="flow-subtitle">Create TPs with New Child Account(s)</div>
+
+            <div class="repeater-container">
+                
+                <div id="item-1" class="repeater-item">
+                    <div class="repeater-item-header">
+                        <span class="repeater-title">Touchpoint 1</span>
+                        <button class="btn-remove-item" onclick="removeItem(1)" title="Remove">🗑️</button>
+                    </div>
+                    <div class="item-grid">
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label">First Name</label>
+                            <input type="text" class="slds-input">
+                        </div>
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label">Last Name</label>
+                            <input type="text" class="slds-input">
+                        </div>
+
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label">Date of Birth</label>
+                            <input type="date" class="slds-input">
+                        </div>
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label">Touchpoint Type<span class="required-marker">*</span></label>
+                            <select class="slds-select">
+                                <option>Please Select</option>
+                                <option>Year 0</option>
+                                <option>Year 1</option>
+                                <option>Year 2</option>
+                                <option>Year 3</option>
+                                <option>Year Unknown</option>
+                            </select>
+                        </div>
+
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label">Site</label>
+                            <div class="input-icon-group">
+                                <span class="input-icon">🔍</span>
+                                <input type="text" class="slds-input" placeholder="Search Sites...">
+                            </div>
+                        </div>
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label">Navigator</label>
+                            <div class="input-icon-group">
+                                <span class="input-icon">🔍</span>
+                                <input type="text" class="slds-input" placeholder="Search Users...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="item-2" class="repeater-item hidden fade-in">
+                    <div class="repeater-item-header">
+                        <span class="repeater-title">Touchpoint 2</span>
+                        <button class="btn-remove-item" onclick="removeItem(2)" title="Remove">🗑️</button>
+                    </div>
+                    <div class="item-grid">
+                        <div class="slds-form-element"><label class="slds-form-element__label">First Name</label><input type="text" class="slds-input"></div>
+                        <div class="slds-form-element"><label class="slds-form-element__label">Last Name</label><input type="text" class="slds-input"></div>
+                        <div class="slds-form-element"><label class="slds-form-element__label">Date of Birth</label><input type="date" class="slds-input"></div>
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label">Touchpoint Type<span class="required-marker">*</span></label>
+                            <select class="slds-select"><option>Please Select</option><option>Year 0</option><option>Year 1</option><option>Year 2</option><option>Year 3</option><option>Year Unknown</option></select>
+                        </div>
+                        <div class="slds-form-element"><label class="slds-form-element__label">Site</label><div class="input-icon-group"><span class="input-icon">🔍</span><input type="text" class="slds-input" placeholder="Search..."></div></div>
+                        <div class="slds-form-element"><label class="slds-form-element__label">Navigator</label><div class="input-icon-group"><span class="input-icon">🔍</span><input type="text" class="slds-input" placeholder="Search..."></div></div>
+                    </div>
+                </div>
+
+                <div id="item-3" class="repeater-item hidden fade-in">
+                    <div class="repeater-item-header">
+                        <span class="repeater-title">Touchpoint 3</span>
+                        <button class="btn-remove-item" onclick="removeItem(3)" title="Remove">🗑️</button>
+                    </div>
+                    <div class="item-grid">
+                        <div class="slds-form-element"><label class="slds-form-element__label">First Name</label><input type="text" class="slds-input"></div>
+                        <div class="slds-form-element"><label class="slds-form-element__label">Last Name</label><input type="text" class="slds-input"></div>
+                        <div class="slds-form-element"><label class="slds-form-element__label">Date of Birth</label><input type="date" class="slds-input"></div>
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label">Touchpoint Type<span class="required-marker">*</span></label>
+                            <select class="slds-select"><option>Please Select</option><option>Year 0</option><option>Year 1</option><option>Year 2</option><option>Year 3</option><option>Year Unknown</option></select>
+                        </div>
+                        <div class="slds-form-element"><label class="slds-form-element__label">Site</label><div class="input-icon-group"><span class="input-icon">🔍</span><input type="text" class="slds-input" placeholder="Search..."></div></div>
+                        <div class="slds-form-element"><label class="slds-form-element__label">Navigator</label><div class="input-icon-group"><span class="input-icon">🔍</span><input type="text" class="slds-input" placeholder="Search..."></div></div>
+                    </div>
+                </div>
+
+                <button id="add-btn" class="btn-add-repeater" onclick="addItem()">
+                    ＋ Add
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-flow-nav btn-secondary">Pause</button>
+            <div class="flow-btn-group">
+                <button class="btn-flow-nav btn-secondary">Previous</button>
+                <button class="btn-flow-nav btn-primary">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var visibleCount = 1;
+
+        function addItem() {
+            if (visibleCount < 3) {
+                visibleCount++;
+                document.getElementById('item-' + visibleCount).classList.remove('hidden');
+            }
+            // Keep button visible but disable logic
+        }
+
+        function removeItem(id) {
+            document.getElementById('item-' + id).classList.add('hidden');
+            visibleCount--;
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Salesforce Console - Global Search Results</title>
+    <style>
+        /* --- SLDS Base & Reset --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F3F3F3;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        * { box-sizing: border-box; }
+        ul { list-style: none; padding: 0; margin: 0; }
+
+        /* --- 1. Global Header --- */
+        .global-header {
+            height: 50px;
+            background-color: #FFFFFF;
+            border-bottom: 1px solid #DDDBDA;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            justify-content: space-between;
+            flex-shrink: 0;
+            z-index: 200;
+            position: relative;
+        }
+
+        .header-brand { display: flex; align-items: center; width: 200px; }
+        .slds-icon-cloud { width: 38px; height: auto; fill: #0070D2; }
+
+        .header-search { flex-grow: 1; display: flex; justify-content: center; }
+        .search-box { position: relative; width: 400px; }
+        .search-box input {
+            width: 100%; padding: 6px 12px 6px 36px;
+            border: 1px solid #DDDBDA; border-radius: 4px;
+            font-size: 13px; outline: none; background-color: #FFFFFF;
+            transition: all 0.2s;
+        }
+        .search-box input:focus { border-color: #1589EE; box-shadow: 0 0 3px #0070D2; }
+        .search-icon { position: absolute; left: 10px; top: 7px; font-size: 14px; color: #706E6B; }
+
+        .header-tools { display: flex; align-items: center; gap: 16px; }
+        .tool-icon { cursor: pointer; color: #706E6B; font-size: 16px; }
+        .tool-icon:hover { color: #0070D2; }
+        .avatar {
+            width: 24px; height: 24px; background-color: #498ba8;
+            border-radius: 50%; position: relative;
+        }
+
+        /* --- 2. Console Navigation Bar --- */
+        .console-nav-bar {
+            height: 40px;
+            background-color: #F3F3F3;
+            border-bottom: 1px solid #DDDBDA;
+            display: flex;
+            align-items: flex-end;
+            padding-left: 12px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 2px 0 rgba(0,0,0,0.05);
+            z-index: 150;
+        }
+
+        .waffle-container { margin-right: 16px; cursor: pointer; margin-bottom: 10px; }
+        .waffle-grid { display: grid; grid-template-columns: repeat(3, 4px); gap: 4px; }
+        .w-dot { width: 4px; height: 4px; background-color: #706E6B; border-radius: 50%; }
+
+        .app-title {
+            font-size: 14px; font-weight: 700; color: #080707;
+            margin-right: 20px; white-space: nowrap; margin-bottom: 10px;
+        }
+
+        .nav-split-button-container { position: relative; margin-bottom: 4px; margin-right: 8px; }
+        .nav-split-button {
+            display: flex; align-items: center;
+            border: 1px solid #DDDBDA; border-radius: 4px;
+            height: 32px; background-color: white;
+        }
+        .nav-label {
+            padding: 0 12px; font-size: 13px; font-weight: 700;
+            color: #080707; cursor: pointer; height: 100%;
+            display: flex; align-items: center;
+            border-right: 1px solid #DDDBDA;
+        }
+        .nav-label:hover { background-color: #F3F3F3; }
+        .nav-arrow-box {
+            padding: 0 8px; height: 100%; display: flex;
+            align-items: center; justify-content: center; cursor: pointer;
+        }
+        .nav-arrow-box:hover { background-color: #F3F3F3; }
+        .nav-arrow { font-size: 8px; color: #080707; }
+
+        /* Workspace Tabs */
+        .workspace-tab {
+            height: 32px;
+            border: 1px solid #DDDBDA;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            padding: 0 12px 0 16px;
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            cursor: pointer;
+            margin-bottom: -1px;
+            position: relative;
+            z-index: 160;
+        }
+        /* Inactive Tab */
+        .workspace-tab.inactive {
+            background-color: #F3F3F3;
+            color: #3E3E3C;
+            font-weight: 400;
+            border-bottom: 1px solid #DDDBDA;
+            z-index: 140;
+        }
+        /* Active Tab (Search Results) */
+        .workspace-tab.active {
+            background-color: #FFFFFF;
+            color: #080707;
+            font-weight: 700;
+            border-top: 2px solid #0070D2;
+            z-index: 160;
+        }
+        .tab-icon { margin-right: 8px; font-size: 14px; }
+        .tab-close { margin-left: 12px; font-size: 11px; color: #706E6B; padding: 2px; border-radius: 2px; }
+
+
+        /* --- 3. Split View Container --- */
+        .split-view-container {
+            display: flex; flex-grow: 1; height: calc(100vh - 90px);
+            overflow: hidden; position: relative;
+        }
+
+        /* LEFT: Sidebar (COLLAPSED) */
+        .split-view-drawer {
+            width: 320px; background-color: #FFFFFF; border-right: 1px solid #DDDBDA;
+            display: flex; flex-direction: column; flex-shrink: 0;
+            transition: width 0.3s ease; overflow: hidden; white-space: nowrap;
+        }
+        .split-view-drawer.collapsed { width: 0; border-right: none; }
+
+        .split-header {
+            padding: 12px 12px 8px 12px; border-bottom: 1px solid #DDDBDA;
+            background-color: #F3F3F3; display: flex; justify-content: space-between;
+            align-items: flex-start;
+        }
+        .split-header-title { font-size: 14px; font-weight: 900; color: #080707; display: flex; align-items: center; cursor: pointer; }
+        .split-header-title span { margin-right: 4px; }
+        .split-meta { font-size: 12px; color: #3E3E3C; margin-top: 4px; }
+        
+        .collapse-btn { cursor: pointer; color: #706E6B; font-size: 16px; padding: 4px; border-radius: 4px; }
+        
+        .split-list { overflow-y: auto; background-color: #FFFFFF; flex-grow: 1; }
+        .split-item { padding: 12px; border-bottom: 1px solid #DDDBDA; cursor: pointer; border-left: 3px solid transparent; }
+        .item-link { font-size: 13px; color: #080707; font-weight: 600; display: block; margin-bottom: 4px; }
+        .item-detail { font-size: 11px; color: #3E3E3C; display: flex; justify-content: space-between; }
+
+        /* RIGHT: Workspace Canvas */
+        .workspace-canvas {
+            flex-grow: 1; background-color: #FFFFFF;
+            overflow: hidden; 
+            position: relative; display: flex; flex-direction: column;
+        }
+
+        /* Sidebar Handle (Collapsed) */
+        .sidebar-expand-handle {
+            position: absolute; left: 0; top: 12px; bottom: 0; width: 12px;
+            background-color: #FFFFFF; border: 1px solid #DDDBDA; border-left: none;
+            border-radius: 0 4px 4px 0; display: flex;
+            align-items: center; justify-content: center; cursor: pointer; z-index: 50;
+            box-shadow: 2px 0 2px rgba(0,0,0,0.05); height: 32px;
+        }
+
+        /* --- SEARCH RESULTS LAYOUT --- */
+        .search-layout {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        /* Search Scope Bar (Left Column) */
+        .search-scope-bar {
+            width: 220px;
+            background-color: #F3F3F3;
+            border-right: 1px solid #DDDBDA;
+            display: flex;
+            flex-direction: column;
+            padding: 12px 0;
+            flex-shrink: 0;
+        }
+        .scope-header {
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #514F4D;
+            text-transform: uppercase;
+        }
+        .scope-item {
+            padding: 8px 16px;
+            font-size: 13px;
+            color: #080707;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+        .scope-item:hover {
+            background-color: #FFFFFF;
+            color: #0070D2;
+        }
+        .scope-item.active {
+            background-color: #FFFFFF;
+            font-weight: 700;
+            border-left-color: #0070D2;
+        }
+
+        /* Search Main Area */
+        .search-main {
+            flex-grow: 1;
+            padding: 24px;
+            overflow-y: auto;
+            background-color: #FFFFFF;
+        }
+        
+        .search-header-area {
+            margin-bottom: 16px;
+        }
+        .search-breadcrumb { font-size: 12px; color: #514F4D; }
+        .search-headline { font-size: 18px; font-weight: 300; margin-top: 4px; }
+        .search-meta { font-size: 12px; color: #514F4D; margin-top: 4px; }
+
+        /* Search Table */
+        .search-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #DDDBDA;
+        }
+        .search-table th {
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #514F4D;
+            background-color: #FAFAF9;
+            padding: 8px 12px;
+            border-bottom: 1px solid #DDDBDA;
+        }
+        .search-table td {
+            font-size: 13px;
+            color: #080707;
+            padding: 8px 12px;
+            border-bottom: 1px solid #DDDBDA;
+            vertical-align: top;
+        }
+        .search-table tr:hover {
+            background-color: #F3F3F3;
+        }
+        .match-link {
+            color: #0070D2;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .match-link:hover { text-decoration: underline; }
+
+    </style>
+</head>
+<body>
+
+    <header class="global-header">
+        <div class="header-brand"><svg class="slds-icon-cloud" viewBox="0 0 24 24"><path d="M18.6 7.6C18.1 3.3 14.5 0 10.1 0 6.6 0 3.4 2 1.8 5.1 0.7 5.7 0 6.8 0 8c0 1.7 1.3 3 3 3h16c1.7 0 3-1.3 3-3 0-1.4-.9-2.6-2.2-3z" /></svg></div>
+        <div class="header-search"><input class="search-box" type="text" value="Jane Doe"></div> <div class="header-tools"><span>★</span><span>＋</span><span>?</span><span>⚙</span><span>🔔</span></div>
+    </header>
+
+    <div class="console-nav-bar">
+        <div class="nav-split-button-container">
+            <div class="nav-split-button"><div class="nav-label">Form Response Logs</div><div class="nav-arrow-box">▼</div></div>
+        </div>
+        
+        <div class="workspace-tab inactive">
+            <span class="tab-icon">📋</span>
+            LOG-0001
+            <span class="tab-close">✕</span>
+        </div>
+
+        <div class="workspace-tab active">
+            <span class="tab-icon">🔍</span>
+            Search Results
+            <span class="tab-close">✕</span>
+        </div>
+    </div>
+
+    <div class="split-view-container">
+        
+        <div id="sidebar" class="split-view-drawer collapsed">
+            <div class="split-header"><div><span style="font-weight:700;">Recently Viewed</span> ▼</div><div>◀</div></div>
+            <div class="split-list">
+                <div class="split-item active"><span class="item-link">LOG-0001</span><div class="item-detail"><span>Ready for Review</span><span>10/24</span></div></div>
+            </div>
+        </div>
+
+        <div class="workspace-canvas">
+            <div class="sidebar-expand-handle">▶</div>
+            
+            <div class="search-layout">
+                
+                <div class="search-scope-bar">
+                    <span class="scope-header">Search Results</span>
+                    <div class="scope-item active">Top Results</div>
+                    <div class="scope-item">Campaigns</div>
+                    <div class="scope-item">Accounts</div>
+                    <div class="scope-item">Touchpoints</div>
+                    <div class="scope-item">Dashboards</div>
+                    <div class="scope-item">Reports</div>
+                    <div class="scope-item">Chatter</div>
+                    <div class="scope-item" style="color:#0070D2;">Show More</div>
+                </div>
+
+                <div class="search-main">
+                    
+                    <div class="search-header-area">
+                        <div class="search-breadcrumb">Global Search</div>
+                        <div class="search-headline">Top Results for "Jane Doe"</div>
+                        <div class="search-meta">4 items found • Sorted by Relevance</div>
+                    </div>
+
+                    <div style="margin-bottom:12px; font-weight:700; font-size:14px; display:flex; align-items:center;">
+                        <span style="margin-right:8px;">🏢</span> Accounts (4+)
+                    </div>
+                    
+                    <table class="search-table">
+                        <thead>
+                            <tr>
+                                <th>Account Name</th>
+                                <th>Date of Birth</th>
+                                <th>Account Record Type</th>
+                                <th>Physical Street</th>
+                                <th>Mobile</th>
+                                <th>Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><a href="#" class="match-link">Jane Doe</a></td>
+                                <td>01/15/1990</td>
+                                <td>Client</td>
+                                <td>123 Maple Street, Greensboro, NC</td>
+                                <td>(555) 123-4567</td>
+                                <td>jane.doe@example.com</td>
+                            </tr>
+                            <tr>
+                                <td><a href="#" class="match-link">Jane A. Doe</a></td>
+                                <td>01/15/1992</td> <td>Client</td>
+                                <td>45 Oak Ave, High Point, NC</td>
+                                <td>(555) 987-6543</td>
+                                <td>jane.a.doe@test.com</td>
+                            </tr>
+                            <tr>
+                                <td><a href="#" class="match-link">Janelle Doe</a></td>
+                                <td>05/22/1990</td>
+                                <td>Prospective Client</td>
+                                <td>123 Maple Street, Greensboro, NC</td> <td>(555) 123-0000</td>
+                                <td>j.doe99@provider.net</td>
+                            </tr>
+                            <tr>
+                                <td><a href="#" class="match-link">Jane Smith-Doe</a></td>
+                                <td>11/02/1985</td>
+                                <td>Client</td>
+                                <td>888 Pine Rd, Greensboro, NC</td>
+                                <td>(555) 123-4567</td> <td>jsmithdoe@work.org</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div style="margin-top:12px; font-size:12px; color:#0070D2; cursor:pointer;">
+                        View More Accounts
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

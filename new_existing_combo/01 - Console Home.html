@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Salesforce Console - Interactive</title>
+    <style>
+        /* --- SLDS Base & Reset --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F3F3F3;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        * { box-sizing: border-box; }
+        ul { list-style: none; padding: 0; margin: 0; }
+
+        /* --- 1. Global Header --- */
+        .global-header {
+            height: 50px;
+            background-color: #FFFFFF;
+            border-bottom: 1px solid #DDDBDA;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            justify-content: space-between;
+            flex-shrink: 0;
+            z-index: 200; /* High z-index for dropdowns */
+            position: relative;
+        }
+
+        .header-brand { display: flex; align-items: center; width: 200px; }
+        .slds-icon-cloud { width: 38px; height: auto; fill: #0070D2; }
+
+        .header-search { flex-grow: 1; display: flex; justify-content: center; }
+        .search-box { position: relative; width: 400px; }
+        .search-box input {
+            width: 100%; padding: 6px 12px 6px 36px;
+            border: 1px solid #DDDBDA; border-radius: 4px;
+            font-size: 13px; outline: none; background-color: #FFFFFF;
+            transition: all 0.2s;
+        }
+        .search-box input:focus { border-color: #1589EE; box-shadow: 0 0 3px #0070D2; }
+        .search-icon { position: absolute; left: 10px; top: 7px; font-size: 14px; color: #706E6B; }
+
+        .header-tools { display: flex; align-items: center; gap: 16px; }
+        .tool-icon { cursor: pointer; color: #706E6B; font-size: 16px; }
+        .tool-icon:hover { color: #0070D2; }
+        .avatar {
+            width: 24px; height: 24px; background-color: #498ba8;
+            border-radius: 50%; position: relative;
+        }
+        .avatar::after {
+            content: ""; width: 8px; height: 8px; background: #2E844A;
+            border: 1px solid white; border-radius: 50%;
+            position: absolute; top: 0; right: -2px;
+        }
+
+        /* --- 2. Console Navigation Bar --- */
+        .console-nav-bar {
+            height: 40px;
+            background-color: #FFFFFF;
+            border-bottom: 1px solid #DDDBDA;
+            display: flex;
+            align-items: center;
+            padding-left: 12px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 2px 0 rgba(0,0,0,0.05);
+            z-index: 150; /* Above split view */
+            position: relative;
+        }
+
+        .waffle-container { margin-right: 16px; cursor: pointer; }
+        .waffle-grid { display: grid; grid-template-columns: repeat(3, 4px); gap: 4px; }
+        .w-dot { width: 4px; height: 4px; background-color: #706E6B; border-radius: 50%; }
+
+        .app-title {
+            font-size: 14px; font-weight: 700; color: #080707;
+            margin-right: 20px; white-space: nowrap;
+        }
+
+        /* --- Interactive Navigation Dropdown --- */
+        .nav-split-button-container {
+            position: relative;
+        }
+        .nav-split-button {
+            display: flex; align-items: center;
+            border: 1px solid #DDDBDA; border-radius: 4px;
+            height: 32px; background-color: white;
+        }
+        .nav-label {
+            padding: 0 12px; font-size: 13px; font-weight: 700;
+            color: #080707; cursor: pointer; height: 100%;
+            display: flex; align-items: center;
+            border-right: 1px solid #DDDBDA;
+        }
+        .nav-label:hover { background-color: #F3F3F3; }
+        
+        .nav-arrow-box {
+            padding: 0 8px; height: 100%; display: flex;
+            align-items: center; justify-content: center; cursor: pointer;
+        }
+        .nav-arrow-box:hover { background-color: #F3F3F3; }
+        .nav-arrow { font-size: 8px; color: #080707; }
+
+        /* Dropdown Menu Styles */
+        .dropdown-menu {
+            display: none; /* Hidden by default */
+            position: absolute;
+            top: 36px; left: 0;
+            background-color: #FFFFFF;
+            border: 1px solid #DDDBDA;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px 0 rgba(0,0,0,0.1);
+            min-width: 200px;
+            padding: 4px 0;
+            z-index: 1000;
+        }
+        .dropdown-menu.show { display: block; }
+        .dropdown-item {
+            padding: 8px 12px;
+            font-size: 13px;
+            color: #080707;
+            cursor: pointer;
+            display: block;
+        }
+        .dropdown-item:hover {
+            background-color: #F3F3F3;
+            text-decoration: none;
+            color: #0070D2;
+        }
+
+
+        /* --- 3. Split View Layout Container --- */
+        .split-view-container {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 90px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- LEFT: Split View Drawer --- */
+        .split-view-drawer {
+            width: 320px;
+            background-color: #FFFFFF;
+            border-right: 1px solid #DDDBDA;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            transition: width 0.3s ease, min-width 0.3s ease; /* Smooth Collapse */
+            overflow: hidden;
+            white-space: nowrap; /* Prevent text wrapping during transition */
+        }
+        
+        /* Collapsed State Class (toggled via JS) */
+        .split-view-drawer.collapsed {
+            width: 0;
+            min-width: 0;
+            border-right: none;
+        }
+
+        .split-header {
+            padding: 12px 12px 8px 12px;
+            border-bottom: 1px solid #DDDBDA;
+            background-color: #F3F3F3;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .split-header-left { display: flex; flex-direction: column; }
+        
+        .split-header-title {
+            font-size: 14px; font-weight: 900; color: #080707;
+            display: flex; align-items: center; cursor: pointer;
+        }
+        .split-header-title span { margin-right: 4px; }
+        .split-meta { font-size: 12px; color: #3E3E3C; margin-top: 4px; }
+        
+        /* Collapse Button */
+        .collapse-btn {
+            cursor: pointer; color: #706E6B; font-size: 16px;
+            padding: 4px; border-radius: 4px;
+        }
+        .collapse-btn:hover { background-color: #e5e5e5; color: #0070D2; }
+
+        .split-list { overflow-y: auto; background-color: #FFFFFF; flex-grow: 1; }
+        .split-item {
+            padding: 12px; border-bottom: 1px solid #DDDBDA;
+            cursor: pointer; border-left: 3px solid transparent;
+        }
+        .split-item:hover { background-color: #F3F3F3; }
+        .item-link { font-size: 13px; color: #080707; font-weight: 600; display: block; margin-bottom: 4px; }
+        .item-detail { font-size: 11px; color: #3E3E3C; display: flex; justify-content: space-between; }
+
+
+        /* --- RIGHT: Workspace (Dashboard) --- */
+        .workspace-canvas {
+            flex-grow: 1;
+            background-color: #F3F3F3;
+            padding: 12px;
+            overflow-y: auto;
+            position: relative;
+            transition: all 0.3s ease; /* Responsive expansion */
+        }
+
+        /* Sidebar Expansion Handle (Hidden by default) */
+        .sidebar-expand-handle {
+            position: absolute;
+            left: 0; top: 12px; bottom: 0;
+            width: 12px;
+            background-color: #FFFFFF;
+            border: 1px solid #DDDBDA;
+            border-left: none;
+            border-radius: 0 4px 4px 0;
+            display: none; /* Hidden unless collapsed */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 50;
+            box-shadow: 2px 0 2px rgba(0,0,0,0.05);
+            height: 32px;
+        }
+        .sidebar-expand-handle:hover { background-color: #f3f3f3; }
+        .sidebar-expand-handle span { font-size: 10px; color: #706E6B; }
+
+        /* Dashboard Components */
+        .component-card {
+            background: #FFFFFF; border: 1px solid #DDDBDA;
+            border-radius: 4px; padding: 16px; margin-bottom: 12px;
+            box-shadow: 0 2px 2px 0 rgba(0,0,0,0.1);
+        }
+        .comp-header {
+            font-size: 16px; font-weight: 300; margin-bottom: 12px;
+            display: flex; justify-content: space-between;
+        }
+
+        /* Responsive Table */
+        .slds-table { width: 100%; border-collapse: collapse; }
+        .slds-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: #514F4D; padding: 8px; border-bottom: 1px solid #DDDBDA; }
+        .slds-table td { font-size: 13px; padding: 8px; border-bottom: 1px solid #DDDBDA; }
+        .status-pill { background: #FFB75D; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+
+        /* Responsive Charts Grid */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive Grid */
+            gap: 12px;
+        }
+        
+        .kpi-box { text-align: center; padding: 20px; }
+        .kpi-val { font-size: 48px; color: #0070d2; font-weight: 300; }
+        .kpi-lbl { font-size: 13px; color: #3e3e3c; display: block; }
+        
+        .bar-chart { margin-top: 10px; }
+        .bar-row { display: flex; height: 24px; width: 100%; background: #eee; margin-bottom: 8px; }
+        .seg { height: 100%; }
+        .seg-green { background: #2E844A; width: 70%; }
+        .seg-red { background: #C23934; width: 30%; }
+        .seg-blue { background: #0070D2; width: 80%; }
+        .seg-pale { background: #90d1ff; width: 20%; }
+        .legend { display: flex; font-size: 11px; color: #3e3e3c; gap: 10px; margin-top: 5px; }
+        .leg-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; display: inline-block; }
+
+    </style>
+</head>
+<body>
+
+    <header class="global-header">
+        <div class="header-brand">
+            <svg class="slds-icon-cloud" viewBox="0 0 24 24">
+                <path d="M18.6 7.6C18.1 3.3 14.5 0 10.1 0 6.6 0 3.4 2 1.8 5.1 0.7 5.7 0 6.8 0 8c0 1.7 1.3 3 3 3h16c1.7 0 3-1.3 3-3 0-1.4-.9-2.6-2.2-3z" />
+            </svg>
+        </div>
+        <div class="header-search">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" placeholder="Search...">
+            </div>
+        </div>
+        <div class="header-tools">
+            <span class="tool-icon">★</span>
+            <span class="tool-icon">＋</span>
+            <span class="tool-icon">?</span>
+            <span class="tool-icon">⚙</span>
+            <span class="tool-icon">🔔</span>
+            <div class="avatar"></div>
+        </div>
+    </header>
+
+    <div class="console-nav-bar">
+        <div class="waffle-container">
+            <div class="waffle-grid">
+                <div class="w-dot"></div><div class="w-dot"></div><div class="w-dot"></div>
+                <div class="w-dot"></div><div class="w-dot"></div><div class="w-dot"></div>
+                <div class="w-dot"></div><div class="w-dot"></div><div class="w-dot"></div>
+            </div>
+        </div>
+        <div class="app-title">Referral Coordination</div>
+        
+        <div class="nav-split-button-container">
+            <div class="nav-split-button">
+                <div class="nav-label" onclick="toggleDropdown()">Home</div>
+                <div class="nav-arrow-box" onclick="toggleDropdown()">
+                    <span class="nav-arrow">▼</span>
+                </div>
+            </div>
+            <ul id="homeDropdown" class="dropdown-menu">
+                <li class="dropdown-item">Form Response Logs</li>
+                <li class="dropdown-item">Campaigns</li>
+                <li class="dropdown-item">Accounts</li>
+                <li class="dropdown-item">Touchpoints</li>
+                <li class="dropdown-item">Dashboards</li>
+                <li class="dropdown-item">Reports</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="split-view-container">
+        
+        <div id="sidebar" class="split-view-drawer">
+            <div class="split-header">
+                <div class="split-header-left">
+                    <div class="split-header-title">
+                        <span>Recently Viewed</span>
+                        <span style="font-size: 8px;">▼</span>
+                    </div>
+                    <div class="split-meta">Updated a few seconds ago • 8 items</div>
+                </div>
+                <div class="collapse-btn" onclick="toggleSidebar()">
+                    ◀
+                </div>
+            </div>
+            <div class="split-list">
+                <div class="split-item">
+                    <span class="item-link">LOG-0001</span>
+                    <div class="item-detail"><span>Ready for Review</span><span>10/24</span></div>
+                </div>
+                <div class="split-item">
+                    <span class="item-link">LOG-0004</span>
+                    <div class="item-detail"><span>Ready for Review</span><span>10/24</span></div>
+                </div>
+                <div class="split-item">
+                    <span class="item-link">LOG-0005</span>
+                    <div class="item-detail"><span>In Review</span><span>10/23</span></div>
+                </div>
+                <div class="split-item">
+                    <span class="item-link">LOG-0002</span>
+                    <div class="item-detail"><span>Qualified</span><span>10/23</span></div>
+                </div>
+                <div class="split-item">
+                    <span class="item-link">LOG-0008</span>
+                    <div class="item-detail"><span>Not Qualified</span><span>10/22</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="workspace-canvas">
+            
+            <div id="expandHandle" class="sidebar-expand-handle" onclick="toggleSidebar()">
+                <span>▶</span>
+            </div>
+
+            <div class="component-card">
+                <div class="comp-header">
+                    <span>Incoming Responses</span>
+                    <span style="font-size:12px; color:#0070D2; cursor: pointer;">View Report</span>
+                </div>
+                <table class="slds-table">
+                    <thead>
+                        <tr>
+                            <th>Response ID</th>
+                            <th>Client Name</th>
+                            <th>Submission Date</th>
+                            <th>Referral Source</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><a href="#" style="color:#0070d2; text-decoration:none;">LOG-0001</a></td>
+                            <td>Jane Doe</td>
+                            <td>10/24/2023</td>
+                            <td>Partner Agency</td>
+                            <td><span class="status-pill">Ready for Review</span></td>
+                        </tr>
+                        <tr>
+                            <td><a href="#" style="color:#0070d2; text-decoration:none;">LOG-0002</a></td>
+                            <td>John Smith</td>
+                            <td>10/24/2023</td>
+                            <td>Self</td>
+                            <td><span class="status-pill">Ready for Review</span></td>
+                        </tr>
+                        <tr>
+                            <td><a href="#" style="color:#0070d2; text-decoration:none;">LOG-0003</a></td>
+                            <td>Maria Garcia</td>
+                            <td>10/23/2023</td>
+                            <td>Medical Site</td>
+                            <td><span class="status-pill">Ready for Review</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="chart-grid">
+                
+                <div class="component-card">
+                    <div class="comp-header">Workload</div>
+                    <div class="kpi-box">
+                        <span class="kpi-val">12</span>
+                        <span class="kpi-lbl">Ready for Review</span>
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="comp-header">Qualification Rate</div>
+                    <div class="bar-chart">
+                        <div class="bar-row">
+                            <div class="seg seg-green"></div>
+                            <div class="seg seg-red"></div>
+                        </div>
+                        <div class="legend">
+                            <div><span class="leg-dot" style="background:#2E844A"></span>Qualified</div>
+                            <div><span class="leg-dot" style="background:#C23934"></span>Not Qualified</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="comp-header">Service Acceptance</div>
+                     <div class="bar-chart">
+                        <div class="bar-row">
+                            <div class="seg seg-blue"></div>
+                            <div class="seg seg-pale"></div>
+                        </div>
+                        <div class="legend">
+                            <div><span class="leg-dot" style="background:#0070D2"></span>Accepted</div>
+                            <div><span class="leg-dot" style="background:#90d1ff"></span>Pending</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Dropdown Toggle Logic
+        function toggleDropdown() {
+            var dropdown = document.getElementById("homeDropdown");
+            if (dropdown.classList.contains("show")) {
+                dropdown.classList.remove("show");
+            } else {
+                dropdown.classList.add("show");
+            }
+        }
+
+        // Close dropdown when clicking outside
+        window.onclick = function(event) {
+            if (!event.target.matches('.nav-label') && !event.target.matches('.nav-arrow-box') && !event.target.matches('.nav-arrow')) {
+                var dropdowns = document.getElementsByClassName("dropdown-menu");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        }
+
+        // 2. Sidebar Collapse Logic
+        function toggleSidebar() {
+            var sidebar = document.getElementById("sidebar");
+            var handle = document.getElementById("expandHandle");
+            
+            if (sidebar.classList.contains("collapsed")) {
+                // Expand
+                sidebar.classList.remove("collapsed");
+                handle.style.display = "none";
+            } else {
+                // Collapse
+                sidebar.classList.add("collapsed");
+                // Show expand handle after transition (simulated timeout match CSS transition)
+                setTimeout(function(){
+                    if(sidebar.classList.contains("collapsed")) {
+                        handle.style.display = "flex";
+                    }
+                }, 300);
+            }
+        }
+    </script>
+
+</body>
+</html>

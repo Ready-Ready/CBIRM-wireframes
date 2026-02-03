@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Salesforce Console - Jane Doe Account (Interactive)</title>
+    <style>
+        /* --- SLDS Base & Reset --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F3F3F3;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        * { box-sizing: border-box; }
+        ul { list-style: none; padding: 0; margin: 0; }
+
+        /* --- 1. Global Header --- */
+        .global-header {
+            height: 50px;
+            background-color: #FFFFFF;
+            border-bottom: 1px solid #DDDBDA;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            justify-content: space-between;
+            flex-shrink: 0;
+            z-index: 200;
+            position: relative;
+        }
+
+        .header-brand { display: flex; align-items: center; width: 200px; }
+        .slds-icon-cloud { width: 38px; height: auto; fill: #0070D2; }
+
+        .header-search { flex-grow: 1; display: flex; justify-content: center; }
+        .search-box { position: relative; width: 400px; }
+        .search-box input {
+            width: 100%; padding: 6px 12px 6px 36px;
+            border: 1px solid #DDDBDA; border-radius: 4px;
+            font-size: 13px; outline: none; background-color: #FFFFFF;
+            transition: all 0.2s;
+        }
+        .search-box input:focus { border-color: #1589EE; box-shadow: 0 0 3px #0070D2; }
+        .search-icon { position: absolute; left: 10px; top: 7px; font-size: 14px; color: #706E6B; }
+
+        .header-tools { display: flex; align-items: center; gap: 16px; }
+        .tool-icon { cursor: pointer; color: #706E6B; font-size: 16px; }
+        .avatar { width: 24px; height: 24px; background-color: #498ba8; border-radius: 50%; }
+
+        /* --- 2. Console Navigation Bar --- */
+        .console-nav-bar {
+            height: 40px;
+            background-color: #F3F3F3;
+            border-bottom: 1px solid #DDDBDA;
+            display: flex;
+            align-items: flex-end;
+            padding-left: 12px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 2px 0 rgba(0,0,0,0.05);
+            z-index: 150;
+        }
+
+        .waffle-container { margin-right: 16px; margin-bottom: 10px; }
+        .waffle-grid { display: grid; grid-template-columns: repeat(3, 4px); gap: 4px; }
+        .w-dot { width: 4px; height: 4px; background-color: #706E6B; border-radius: 50%; }
+
+        .nav-split-button-container { position: relative; margin-bottom: 4px; margin-right: 8px; }
+        .nav-split-button {
+            display: flex; align-items: center;
+            border: 1px solid #DDDBDA; border-radius: 4px;
+            height: 32px; background-color: white;
+        }
+        .nav-label { padding: 0 12px; font-size: 13px; font-weight: 700; border-right: 1px solid #DDDBDA; }
+        .nav-arrow-box { padding: 0 8px; font-size: 8px; }
+
+        /* --- TABS --- */
+        .workspace-tab {
+            height: 32px;
+            border: 1px solid #DDDBDA;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            padding: 0 12px 0 16px;
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            cursor: pointer;
+            margin-bottom: -1px;
+            position: relative;
+            max-width: 200px;
+        }
+        .tab-icon { margin-right: 8px; font-size: 14px; }
+        .tab-close { margin-left: 12px; font-size: 11px; color: #706E6B; }
+
+        /* Inactive Tab */
+        .workspace-tab.inactive {
+            background-color: #F3F3F3;
+            color: #3E3E3C;
+            font-weight: 400;
+            z-index: 140;
+        }
+        .workspace-tab.inactive:hover { background-color: #eef1f6; }
+
+        /* Active Tab */
+        .workspace-tab.active {
+            background-color: #FFFFFF;
+            color: #080707;
+            font-weight: 700;
+            border-top: 2px solid #0070D2;
+            z-index: 160;
+        }
+
+        /* --- 3. Split View Container --- */
+        .split-view-container {
+            display: flex; flex-grow: 1; height: calc(100vh - 90px);
+            overflow: hidden; position: relative;
+        }
+
+        /* Sidebar */
+        .split-view-drawer {
+            width: 320px; background-color: #FFFFFF; border-right: 1px solid #DDDBDA;
+            display: flex; flex-direction: column; flex-shrink: 0;
+            transition: width 0.3s ease, min-width 0.3s ease;
+            overflow: hidden; white-space: nowrap;
+        }
+        .split-view-drawer.collapsed { width: 0; min-width: 0; border-right: none; }
+
+        .split-header {
+            padding: 12px 12px 8px 12px; border-bottom: 1px solid #DDDBDA;
+            background-color: #F3F3F3; display: flex; justify-content: space-between;
+            align-items: flex-start;
+        }
+        .split-header-title { font-size: 14px; font-weight: 900; color: #080707; display: flex; align-items: center; cursor: pointer; }
+        .split-meta { font-size: 12px; color: #3E3E3C; margin-top: 4px; }
+        
+        .collapse-btn { cursor: pointer; color: #706E6B; font-size: 16px; padding: 4px; border-radius: 4px; }
+        .collapse-btn:hover { background-color: #e5e5e5; color: #0070D2; }
+
+        .split-list { overflow-y: auto; background-color: #FFFFFF; flex-grow: 1; }
+        .split-item {
+            padding: 12px; border-bottom: 1px solid #DDDBDA; cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+        .split-item:hover { background-color: #F3F3F3; }
+        .split-item.active { background-color: #FFFFFF; border-left-color: #0070D2; }
+
+        .item-link { font-size: 13px; color: #080707; font-weight: 600; display: block; margin-bottom: 4px; }
+        .item-detail { font-size: 11px; color: #3E3E3C; display: flex; justify-content: space-between; }
+
+        /* Workspace Canvas */
+        .workspace-canvas {
+            flex-grow: 1; background-color: #FFFFFF;
+            overflow: hidden; 
+            position: relative; display: flex; flex-direction: column;
+        }
+
+        /* Sidebar Handle */
+        .sidebar-expand-handle {
+            position: absolute; left: 0; top: 12px; bottom: 0; width: 12px;
+            background-color: #FFFFFF; border: 1px solid #DDDBDA; border-left: none;
+            border-radius: 0 4px 4px 0; display: flex; /* Flex via JS when collapsed */
+            align-items: center; justify-content: center; cursor: pointer; z-index: 50;
+            box-shadow: 2px 0 2px rgba(0,0,0,0.05); height: 32px;
+        }
+        .sidebar-expand-handle:hover { background-color: #f3f3f3; }
+
+        /* --- RECORD CONTENT --- */
+        .record-scroll-container {
+            flex-grow: 1; overflow-y: auto; padding: 12px; background-color: #F3F3F3;
+        }
+
+        /* Highlights Panel */
+        .highlights-panel {
+            background-color: #FFFFFF; padding: 16px 24px;
+            border: 1px solid #DDDBDA; border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .hp-top { display: flex; justify-content: space-between; align-items: flex-start; }
+        .record-info { display: flex; align-items: center; }
+        .icon {
+            width: 32px; height: 32px; background-color: #7F8DE1; /* Account Purple */
+            border-radius: 4px; margin-right: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 18px;
+        }
+        .record-title h1 { font-size: 18px; font-weight: 700; margin: 0; color: #080707; }
+        .record-title span { font-size: 12px; color: #3E3E3C; text-transform: uppercase; }
+        
+        .hp-actions button {
+            background-color: #FFFFFF; color: #0070D2;
+            border: 1px solid #DDDBDA; padding: 8px 16px;
+            font-size: 13px; border-radius: 4px; cursor: pointer; margin-left: 8px;
+        }
+
+        /* Main Grid (50/50) */
+        .page-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            height: 100%;
+        }
+
+        /* Cards */
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #DDDBDA;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+        }
+        .card-header {
+            padding: 12px 16px;
+            background-color: #F3F3F3;
+            border-bottom: 1px solid #DDDBDA;
+            font-weight: 700;
+            font-size: 13px;
+            border-radius: 4px 4px 0 0;
+        }
+        .card-body { padding: 16px; }
+
+        /* Field Layout */
+        .field-row {
+            display: flex; justify-content: space-between;
+            padding: 8px 0; border-bottom: 1px solid #ECEBEA;
+        }
+        .field-label { font-size: 12px; color: #514F4D; width: 40%; }
+        .field-value { font-size: 13px; color: #080707; width: 60%; }
+
+        /* Related List Table */
+        .rl-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .rl-table th {
+            text-align: left; color: #514F4D; font-weight: 700;
+            border-bottom: 1px solid #DDDBDA; padding: 8px;
+            text-transform: uppercase; font-size: 11px;
+        }
+        .rl-table td {
+            border-bottom: 1px solid #DDDBDA; padding: 8px;
+            color: #080707;
+        }
+        .rl-link { color: #0070D2; text-decoration: none; }
+        .rl-link:hover { text-decoration: underline; }
+
+    </style>
+</head>
+<body>
+
+    <header class="global-header">
+        <div class="header-brand"><svg class="slds-icon-cloud" viewBox="0 0 24 24"><path d="M18.6 7.6C18.1 3.3 14.5 0 10.1 0 6.6 0 3.4 2 1.8 5.1 0.7 5.7 0 6.8 0 8c0 1.7 1.3 3 3 3h16c1.7 0 3-1.3 3-3 0-1.4-.9-2.6-2.2-3z" /></svg></div>
+        <div class="header-search"><input class="search-box" type="text" placeholder="Search..."></div>
+        <div class="header-tools"><span>★</span><span>＋</span><span>?</span><span>⚙</span><span>🔔</span><div class="avatar"></div></div>
+    </header>
+
+    <div class="console-nav-bar">
+        <div class="nav-split-button-container">
+            <div class="nav-split-button"><div class="nav-label">Form Response Logs</div><div class="nav-arrow-box">▼</div></div>
+        </div>
+        <div class="workspace-tab inactive"><span class="tab-icon">📋</span>LOG-0001<span class="tab-close">✕</span></div>
+        <div class="workspace-tab inactive"><span class="tab-icon">🔍</span>Search Results<span class="tab-close">✕</span></div>
+        <div class="workspace-tab active"><span class="tab-icon">👤</span>Jane Doe<span class="tab-close">✕</span></div>
+    </div>
+
+    <div class="split-view-container">
+        
+        <div id="sidebar" class="split-view-drawer collapsed">
+            <div class="split-header">
+                <div>
+                    <div class="split-header-title">
+                        <span>Recently Viewed</span>
+                        <span style="font-size: 8px;">▼</span>
+                    </div>
+                    <div class="split-meta">Updated a few seconds ago • 6 items</div>
+                </div>
+                <div class="collapse-btn" onclick="toggleSidebar()">◀</div>
+            </div>
+            <div class="split-list">
+                <div class="split-item active">
+                    <span class="item-link">Jane Doe</span>
+                    <div class="item-detail"><span>Account</span><span>Client</span></div>
+                </div>
+                <div class="split-item">
+                    <span class="item-link">John Smith</span>
+                    <div class="item-detail"><span>Account</span><span>Client</span></div>
+                </div>
+                <div class="split-item">
+                    <span class="item-link">Maria Garcia</span>
+                    <div class="item-detail"><span>Account</span><span>Prospective</span></div>
+                </div>
+                <div class="split-item">
+                    <span class="item-link">Sarah Connor</span>
+                    <div class="item-detail"><span>Account</span><span>Client</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="workspace-canvas">
+            <div id="expandHandle" class="sidebar-expand-handle" onclick="toggleSidebar()">
+                <span>▶</span>
+            </div>
+            
+            <div class="record-scroll-container">
+                
+                <div class="highlights-panel">
+                    <div class="hp-top">
+                        <div class="record-info">
+                            <div class="icon">🏢</div>
+                            <div class="record-title">
+                                <span>Account (Person)</span>
+                                <h1>Jane Doe</h1>
+                            </div>
+                        </div>
+                        <div class="hp-actions">
+                            <button>Edit</button>
+                            <button>Delete</button>
+                            <button>Create Case</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page-grid">
+                    
+                    <div class="card">
+                        <div class="card-header">Account Details</div>
+                        <div class="card-body">
+                            <div class="field-row">
+                                <span class="field-label">Account Name</span>
+                                <span class="field-value">Jane Doe</span>
+                            </div>
+                            <div class="field-row">
+                                <span class="field-label">Record Type</span>
+                                <span class="field-value">Client</span>
+                            </div>
+                            <div class="field-row">
+                                <span class="field-label">Phone</span>
+                                <span class="field-value"><a href="#" class="rl-link">(555) 123-4567</a></span>
+                            </div>
+                            <div class="field-row">
+                                <span class="field-label">Email</span>
+                                <span class="field-value"><a href="#" class="rl-link">jane.doe@example.com</a></span>
+                            </div>
+                            <div class="field-row">
+                                <span class="field-label">Birthdate</span>
+                                <span class="field-value">01/15/1990</span>
+                            </div>
+                            <div class="field-row">
+                                <span class="field-label">Billing Address</span>
+                                <span class="field-value">123 Maple Street<br>Greensboro, NC 27401</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header" style="display:flex; justify-content:space-between;">
+                            <span>Touchpoints (CLIENT) (1)</span>
+                            <span style="font-weight:400; color:#0070D2; cursor:pointer;">New</span>
+                        </div>
+                        <div class="card-body" style="padding:0;">
+                            <table class="rl-table">
+                                <thead>
+                                    <tr>
+                                        <th>Touchpoint Number</th>
+                                        <th>Current Site</th>
+                                        <th>Touchpoint Type</th>
+                                        <th>Date Opened</th>
+                                        <th>Child</th>
+                                        <th>Status</th>
+                                        <th>Inactive Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><a href="#" class="rl-link">00003928</a></td>
+                                        <td>AHWFB Peds Premier</td>
+                                        <td>Year 1</td>
+                                        <td>01/12/2025</td>
+                                        <td><a href="#" class="rl-link">Jacquelyn Doe</a></td>
+                                        <td>Service Delivery Incomplete</td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div style="padding:12px; font-size:12px; text-align:center; color:#0070D2; cursor:pointer;">
+                                View All
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            var sidebar = document.getElementById("sidebar");
+            var handle = document.getElementById("expandHandle");
+            
+            if (sidebar.classList.contains("collapsed")) {
+                // Expand
+                sidebar.classList.remove("collapsed");
+                handle.style.display = "none";
+            } else {
+                // Collapse
+                sidebar.classList.add("collapsed");
+                // Delay showing handle slightly to match transition
+                setTimeout(function(){
+                    if(sidebar.classList.contains("collapsed")) {
+                        handle.style.display = "flex";
+                    }
+                }, 300);
+            }
+        }
+    </script>
+
+</body>
+</html>

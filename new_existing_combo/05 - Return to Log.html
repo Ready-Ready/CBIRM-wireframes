@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Salesforce Console - LOG-0001 Multi-Tab</title>
+    <style>
+        /* --- SLDS Base & Reset --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F3F3F3;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        * { box-sizing: border-box; }
+        ul { list-style: none; padding: 0; margin: 0; }
+
+        /* --- 1. Global Header --- */
+        .global-header {
+            height: 50px;
+            background-color: #FFFFFF;
+            border-bottom: 1px solid #DDDBDA;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            justify-content: space-between;
+            flex-shrink: 0;
+            z-index: 200;
+            position: relative;
+        }
+
+        .header-brand { display: flex; align-items: center; width: 200px; }
+        .slds-icon-cloud { width: 38px; height: auto; fill: #0070D2; }
+
+        .header-search { flex-grow: 1; display: flex; justify-content: center; }
+        .search-box { position: relative; width: 400px; }
+        .search-box input {
+            width: 100%; padding: 6px 12px 6px 36px;
+            border: 1px solid #DDDBDA; border-radius: 4px;
+            font-size: 13px; outline: none; background-color: #FFFFFF;
+            transition: all 0.2s;
+        }
+        .search-box input:focus { border-color: #1589EE; box-shadow: 0 0 3px #0070D2; }
+        .search-icon { position: absolute; left: 10px; top: 7px; font-size: 14px; color: #706E6B; }
+
+        .header-tools { display: flex; align-items: center; gap: 16px; }
+        .tool-icon { cursor: pointer; color: #706E6B; font-size: 16px; }
+        .avatar { width: 24px; height: 24px; background-color: #498ba8; border-radius: 50%; }
+
+        /* --- 2. Console Navigation Bar --- */
+        .console-nav-bar {
+            height: 40px;
+            background-color: #F3F3F3;
+            border-bottom: 1px solid #DDDBDA;
+            display: flex;
+            align-items: flex-end;
+            padding-left: 12px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 2px 0 rgba(0,0,0,0.05);
+            z-index: 150;
+        }
+
+        .waffle-container { margin-right: 16px; margin-bottom: 10px; }
+        .waffle-grid { display: grid; grid-template-columns: repeat(3, 4px); gap: 4px; }
+        .w-dot { width: 4px; height: 4px; background-color: #706E6B; border-radius: 50%; }
+
+        .nav-split-button-container { position: relative; margin-bottom: 4px; margin-right: 8px; }
+        .nav-split-button {
+            display: flex; align-items: center;
+            border: 1px solid #DDDBDA; border-radius: 4px;
+            height: 32px; background-color: white;
+        }
+        .nav-label { padding: 0 12px; font-size: 13px; font-weight: 700; border-right: 1px solid #DDDBDA; }
+        .nav-arrow-box { padding: 0 8px; font-size: 8px; }
+
+        /* --- TABS --- */
+        .workspace-tab {
+            height: 32px;
+            border: 1px solid #DDDBDA;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            padding: 0 12px 0 16px;
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            cursor: pointer;
+            margin-bottom: -1px;
+            position: relative;
+            max-width: 200px;
+        }
+        .tab-icon { margin-right: 8px; font-size: 14px; }
+        .tab-close { margin-left: 12px; font-size: 11px; color: #706E6B; }
+
+        /* Inactive Tab Styling */
+        .workspace-tab.inactive {
+            background-color: #F3F3F3;
+            color: #3E3E3C;
+            font-weight: 400;
+            z-index: 140;
+        }
+        .workspace-tab.inactive:hover { background-color: #eef1f6; }
+
+        /* Active Tab Styling */
+        .workspace-tab.active {
+            background-color: #FFFFFF;
+            color: #080707;
+            font-weight: 700;
+            border-top: 2px solid #0070D2;
+            z-index: 160;
+        }
+
+        /* --- 3. Split View Container --- */
+        .split-view-container {
+            display: flex; flex-grow: 1; height: calc(100vh - 90px);
+            overflow: hidden; position: relative;
+        }
+
+        /* Sidebar */
+        .split-view-drawer {
+            width: 320px; background-color: #FFFFFF; border-right: 1px solid #DDDBDA;
+            display: flex; flex-direction: column; flex-shrink: 0;
+            transition: width 0.3s ease, min-width 0.3s ease;
+            overflow: hidden; white-space: nowrap;
+        }
+        .split-view-drawer.collapsed { width: 0; min-width: 0; border-right: none; }
+
+        .split-header {
+            padding: 12px 12px 8px 12px; border-bottom: 1px solid #DDDBDA;
+            background-color: #F3F3F3; display: flex; justify-content: space-between;
+            align-items: flex-start;
+        }
+        .split-header-title { font-size: 14px; font-weight: 900; color: #080707; display: flex; align-items: center; cursor: pointer; }
+        .split-meta { font-size: 12px; color: #3E3E3C; margin-top: 4px; }
+        
+        .collapse-btn { cursor: pointer; color: #706E6B; font-size: 16px; padding: 4px; border-radius: 4px; }
+        .collapse-btn:hover { background-color: #e5e5e5; color: #0070D2; }
+
+        .split-list { overflow-y: auto; background-color: #FFFFFF; flex-grow: 1; }
+        .split-item {
+            padding: 12px; border-bottom: 1px solid #DDDBDA; cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+        .split-item:hover { background-color: #F3F3F3; }
+        .split-item.active { background-color: #FFFFFF; border-left-color: #0070D2; }
+
+        .item-link { font-size: 13px; color: #080707; font-weight: 600; display: block; margin-bottom: 4px; }
+        .item-detail { font-size: 11px; color: #3E3E3C; display: flex; justify-content: space-between; }
+
+        /* Workspace Canvas */
+        .workspace-canvas {
+            flex-grow: 1; background-color: #FFFFFF;
+            overflow: hidden; 
+            position: relative; display: flex; flex-direction: column;
+        }
+
+        /* Sidebar Handle */
+        .sidebar-expand-handle {
+            position: absolute; left: 0; top: 12px; bottom: 0; width: 12px;
+            background-color: #FFFFFF; border: 1px solid #DDDBDA; border-left: none;
+            border-radius: 0 4px 4px 0; display: none; /* Hidden by default if expanded */
+            align-items: center; justify-content: center; cursor: pointer; z-index: 50;
+            box-shadow: 2px 0 2px rgba(0,0,0,0.05); height: 32px;
+        }
+        .sidebar-expand-handle:hover { background-color: #f3f3f3; }
+
+        /* --- RECORD CONTENT --- */
+        .record-scroll-container {
+            flex-grow: 1; overflow-y: auto; padding: 12px; background-color: #F3F3F3;
+        }
+
+        /* Highlights Panel */
+        .highlights-panel {
+            background-color: #FFFFFF; padding: 16px 24px;
+            border: 1px solid #DDDBDA; border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .hp-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .record-info { display: flex; align-items: center; }
+        .icon {
+            width: 32px; height: 32px; background-color: #3BA755; 
+            border-radius: 4px; margin-right: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 18px;
+        }
+        .record-title h1 { font-size: 18px; font-weight: 700; margin: 0; color: #080707; }
+        .record-title span { font-size: 12px; color: #3E3E3C; text-transform: uppercase; }
+        
+        .hp-actions button {
+            background-color: #FFFFFF; color: #0070D2;
+            border: 1px solid #DDDBDA; padding: 8px 16px;
+            font-size: 13px; border-radius: 4px; cursor: pointer; margin-left: 8px;
+        }
+        .hp-actions .btn-brand { background-color: #0070D2; color: white; border: 1px solid #0070D2; }
+
+        /* Compact Layout */
+        .compact-layout { display: flex; gap: 48px; margin-left: 44px; }
+        .compact-field .c-label { font-size: 12px; color: #5d5d5d; display: block; margin-bottom: 2px; }
+        .compact-field .c-value { font-size: 14px; color: #080707; font-weight: 400; border-bottom: 1px dotted #ccc; }
+
+        /* Tabs */
+        .record-tabs {
+            background-color: #FFFFFF; border: 1px solid #DDDBDA;
+            border-bottom: none; border-radius: 4px 4px 0 0;
+            padding: 0 24px; display: flex; margin-bottom: 0;
+        }
+        .r-tab {
+            padding: 12px 0; margin-right: 24px;
+            font-size: 13px; font-weight: 700; color: #0070D2;
+            border-bottom: 2px solid #0070D2; cursor: pointer;
+        }
+        .r-tab-inactive { color: #444; border-bottom: none; font-weight: 400; }
+
+        /* Body */
+        .record-body {
+            background-color: #FFFFFF; border: 1px solid #DDDBDA;
+            border-radius: 0 0 4px 4px; border-top: 1px solid #DDDBDA;
+            padding: 24px; margin-top: -1px; 
+        }
+        .section { margin-bottom: 24px; }
+        .section-header {
+            background-color: #F3F3F3; padding: 8px 12px;
+            font-size: 13px; font-weight: 700; border-radius: 4px;
+            margin-bottom: 12px; display: flex; align-items: center;
+        }
+        .section-header::before { content: "▼"; font-size: 9px; margin-right: 8px; color: #706E6B; }
+
+        .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 32px; }
+        .field { border-bottom: 1px solid #ecebea; padding-bottom: 4px; }
+        .label { font-size: 12px; color: #3E3E3C; margin-bottom: 4px; display: block; }
+        .value { font-size: 13px; color: #080707; min-height: 18px; }
+        .full-width { grid-column: span 2; }
+        .long-text { white-space: pre-wrap; }
+
+    </style>
+</head>
+<body>
+
+    <header class="global-header">
+        <div class="header-brand"><svg class="slds-icon-cloud" viewBox="0 0 24 24"><path d="M18.6 7.6C18.1 3.3 14.5 0 10.1 0 6.6 0 3.4 2 1.8 5.1 0.7 5.7 0 6.8 0 8c0 1.7 1.3 3 3 3h16c1.7 0 3-1.3 3-3 0-1.4-.9-2.6-2.2-3z" /></svg></div>
+        <div class="header-search"><input class="search-box" type="text" placeholder="Search..."></div>
+        <div class="header-tools"><span>★</span><span>＋</span><span>?</span><span>⚙</span><span>🔔</span><div class="avatar"></div></div>
+    </header>
+
+    <div class="console-nav-bar">
+        <div class="nav-split-button-container">
+            <div class="nav-split-button"><div class="nav-label">Form Response Logs</div><div class="nav-arrow-box">▼</div></div>
+        </div>
+        
+        <div class="workspace-tab active"><span class="tab-icon">📋</span>LOG-0001<span class="tab-close">✕</span></div>
+        
+        <div class="workspace-tab inactive"><span class="tab-icon">🔍</span>Search Results<span class="tab-close">✕</span></div>
+        <div class="workspace-tab inactive"><span class="tab-icon">👤</span>Jane Doe<span class="tab-close">✕</span></div>
+    </div>
+
+    <div class="split-view-container">
+        
+        <div id="sidebar" class="split-view-drawer">
+            <div class="split-header">
+                <div>
+                    <div class="split-header-title">
+                        <span>Recently Viewed</span>
+                        <span style="font-size: 8px;">▼</span>
+                    </div>
+                    <div class="split-meta">Updated a few seconds ago • 8 items</div>
+                </div>
+                <div class="collapse-btn" onclick="toggleSidebar()">◀</div>
+            </div>
+            <div class="split-list">
+                <div class="split-item active">
+                    <span class="item-link">LOG-0001</span>
+                    <div class="item-detail"><span>Ready for Review</span><span>10/24</span></div>
+                </div>
+                <div class="split-item"><span class="item-link">LOG-0004</span><div class="item-detail"><span>Ready for Review</span><span>10/24</span></div></div>
+                <div class="split-item"><span class="item-link">LOG-0005</span><div class="item-detail"><span>In Review</span><span>10/23</span></div></div>
+                <div class="split-item"><span class="item-link">LOG-0002</span><div class="item-detail"><span>Qualified</span><span>10/23</span></div></div>
+            </div>
+        </div>
+
+        <div class="workspace-canvas">
+            <div id="expandHandle" class="sidebar-expand-handle" onclick="toggleSidebar()"><span>▶</span></div>
+            
+            <div class="record-scroll-container">
+                
+                <div class="highlights-panel">
+                    <div class="hp-top">
+                        <div class="record-info">
+                            <div class="icon">📋</div>
+                            <div class="record-title">
+                                <span>Form Response Log</span>
+                                <h1>LOG-0001</h1>
+                            </div>
+                        </div>
+                        <div class="hp-actions">
+                            <button>Edit</button>
+                            <button>Delete</button>
+                            <button class="btn-brand">Process Response</button>
+                        </div>
+                    </div>
+                    <div class="compact-layout">
+                        <div class="compact-field"><span class="c-label">Client Name</span><span class="c-value">Jane Doe</span></div>
+                        <div class="compact-field"><span class="c-label">In Guilford County?</span><span class="c-value">Yes</span></div>
+                        <div class="compact-field"><span class="c-label">Is Pregnant?</span><span class="c-value">Yes</span></div>
+                        <div class="compact-field"><span class="c-label">Children &le; 3?</span><span class="c-value">Yes</span></div>
+                    </div>
+                </div>
+
+                <div class="record-tabs"><div class="r-tab">Details</div><div class="r-tab r-tab-inactive">Related</div></div>
+
+                <div class="record-body">
+                    
+                    <div class="section"><div class="section-header">Client Information</div>
+                        <div class="field-grid">
+                            <div class="field"><span class="label">Client Full Name</span><div class="value">Jane Doe</div></div>
+                            <div class="field"><span class="label">Date of Birth</span><div class="value">01/15/1990</div></div>
+                            <div class="field"><span class="label">Email Address</span><div class="value">jane.doe@example.com</div></div>
+                            <div class="field"><span class="label">Phone Number</span><div class="value">(555) 123-4567</div></div>
+                            <div class="field"><span class="label">Primary Language</span><div class="value">English</div></div>
+                            <div class="field"><span class="label">Interpreter Required?</span><div class="value"><input type="checkbox" disabled></div></div>
+                            <div class="field full-width"><span class="label">Street Address</span><div class="value">123 Maple Street, Greensboro, NC</div></div>
+                            <div class="field"><span class="label">Zip Code</span><div class="value">27401</div></div>
+                            <div class="field"><span class="label">In Guilford County?</span><div class="value"><input type="checkbox" checked disabled></div></div>
+                        </div>
+                    </div>
+
+                    <div class="section"><div class="section-header">Family Information</div>
+                        <div class="field-grid">
+                            <div class="field"><span class="label">Is Pregnant?</span><div class="value"><input type="checkbox" checked disabled></div></div>
+                            <div class="field"><span class="label">Estimated Due Date</span><div class="value">12/01/2023</div></div>
+                            <div class="field"><span class="label">Total Children</span><div class="value">2</div></div>
+                            <div class="field"><span class="label">Children Aged 3 or Under?</span><div class="value">Yes</div></div>
+                        </div>
+                    </div>
+
+                    <div class="section"><div class="section-header">Referral Information</div>
+                        <div class="field-grid">
+                            <div class="field"><span class="label">Referral Person Name</span><div class="value">Dr. Smith</div></div>
+                            <div class="field"><span class="label">Referral Source</span><div class="value">Partner Agency</div></div>
+                            <div class="field full-width"><span class="label">Medical Site & Agency Info</span><div class="value long-text">Dr. Smith with Community Health Clinic.</div></div>
+                            <div class="field full-width"><span class="label">Referral Contact Info</span><div class="value long-text">Clinic Main Line: 555-0000, ask for front desk.</div></div>
+                            <div class="field full-width"><span class="label">Reason for Referral</span><div class="value long-text">Patient requests assistance with housing and prenatal care coordination.</div></div>
+                            <div class="field full-width"><span class="label">Additional Services Requested</span><div class="value">N/A</div></div>
+                            <div class="field full-width"><span class="label">Additional Information</span><div class="value long-text">Patient is best reachable in the mornings.</div></div>
+                        </div>
+                    </div>
+
+                    <div class="section"><div class="section-header">System Information</div>
+                        <div class="field-grid">
+                            <div class="field"><span class="label">Office Form ID</span><div class="value">A92-9382-9982</div></div>
+                            <div class="field"><span class="label">Submission Date</span><div class="value">10/24/2023</div></div>
+                            <div class="field"><span class="label">Form Start Time</span><div class="value">10/24/2023 2:00 PM</div></div>
+                            <div class="field"><span class="label">Form Completion Time</span><div class="value">10/24/2023 2:15 PM</div></div>
+                            <div class="field"><span class="label">Created By</span><div class="value">PowerAutomate Integration User</div></div>
+                            <div class="field"><span class="label">Last Modified By</span><div class="value">PowerAutomate Integration User</div></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            var sidebar = document.getElementById("sidebar");
+            var handle = document.getElementById("expandHandle");
+            
+            if (sidebar.classList.contains("collapsed")) {
+                // Expand
+                sidebar.classList.remove("collapsed");
+                handle.style.display = "none";
+            } else {
+                // Collapse
+                sidebar.classList.add("collapsed");
+                setTimeout(function(){
+                    if(sidebar.classList.contains("collapsed")) {
+                        handle.style.display = "flex";
+                    }
+                }, 300);
+            }
+        }
+    </script>
+
+</body>
+</html>
